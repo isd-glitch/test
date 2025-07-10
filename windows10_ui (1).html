@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windows 10 UI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* デスクトップ */
+        .desktop {
+            height: calc(100vh - 40px);
+            position: relative;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+        }
+
+        /* デスクトップアイコン */
+        .desktop-icon {
+            position: absolute;
+            width: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .desktop-icon:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .desktop-icon.selected {
+            background: rgba(0, 120, 212, 0.3);
+            border: 1px solid rgba(0, 120, 212, 0.6);
+        }
+
+        .desktop-icon-image {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .desktop-icon-label {
+            color: white;
+            font-size: 11px;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+            line-height: 1.2;
+            word-wrap: break-word;
+            max-width: 100%;
+        }
+
+        /* 選択ボックス */
+        .selection-box {
+            position: absolute;
+            border: 1px solid rgba(0, 120, 212, 0.8);
+            background: rgba(0, 120, 212, 0.1);
+            pointer-events: none;
+            display: none;
+            z-index: 10;
+        }
+
+        /* ドロップゾーン */
+        .drop-zone {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 120, 212, 0.1);
+            border: 2px dashed rgba(0, 120, 212, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            z-index: 5;
+        }
+
+        .drop-zone.active {
+            display: flex;
+        }
+
+        /* タスクバー */
+        .taskbar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 40px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            z-index: 1000;
+        }
+
+        /* スタートボタン */
+        .start-button {
+            width: 48px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 8px;
+            transition: all 0.2s;
+        }
+
+        .start-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .start-button:active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .windows-logo {
+            width: 16px;
+            height: 16px;
+            background: #fff;
+            mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 88"><path d="m0,12.402,35.687-4.8602,0.0156,34.423-35.67,0.20313zm35.67,33.529,0.0277,34.453-35.67-4.9041-0.002-29.78zm4.3261-39.025,47.318-6.906,0,41.527-47.318,0.37565zm47.329,39.349-0.0111,41.34-47.318-6.6784-0.0663-34.739z"/></svg>');
+        }
+
+        /* 検索ボックス */
+        .search-box {
+            width: 300px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+            padding: 0 40px 0 12px;
+            margin-right: 8px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .search-box::placeholder {
+            color: #666;
+        }
+
+        /* タスクバーアイコン */
+        .taskbar-icons {
+            display: flex;
+            gap: 2px;
+            margin-left: auto;
+            margin-right: 8px;
+        }
+
+        .taskbar-icon {
+            width: 32px;
+            height: 32px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+
+        .taskbar-icon:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* 時計 */
+        .clock {
+            color: white;
+            font-size: 13px;
+            text-align: center;
+            padding: 0 12px;
+            cursor: pointer;
+        }
+
+        .clock:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+
+        /* スタートメニュー */
+        .start-menu {
+            position: fixed;
+            bottom: 40px;
+            left: 0;
+            width: 640px;
+            height: 640px;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            z-index: 999;
+            display: flex;
+        }
+
+        .start-menu.active {
+            transform: translateY(0);
+        }
+
+        .start-menu-left {
+            width: 240px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .start-menu-right {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            color: white;
+            margin-bottom: 20px;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .user-profile:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 50%;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .menu-items {
+            list-style: none;
+        }
+
+        .menu-item {
+            padding: 12px 8px;
+            color: white;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .menu-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 12px;
+            opacity: 0.8;
+        }
+
+        /* アプリタイル */
+        .app-tiles {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            color: white;
+        }
+
+        .tile {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tile:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .tile:active {
+            transform: scale(0.95);
+        }
+
+        .tile.large {
+            grid-column: span 2;
+            grid-row: span 2;
+            width: auto;
+            height: auto;
+        }
+
+        .tile-icon {
+            font-size: 24px;
+        }
+
+        /* ウィンドウ */
+        .window {
+            position: absolute;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            transition: all 0.3s;
+            display: none;
+            z-index: 100;
+        }
+
+        .window.active {
+            display: block;
+        }
+
+        .window.maximized {
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: calc(100vh - 40px) !important;
+            border-radius: 0;
+        }
+
+        .window-titlebar {
+            height: 32px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            cursor: move;
+        }
+
+        .window-title {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 1px;
+        }
+
+        .window-control {
+            width: 46px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .window-control:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .window-control.close:hover {
+            background: #e81123;
+            color: white;
+        }
+
+        .window-content {
+            padding: 20px;
+            height: calc(100% - 32px);
+            overflow: auto;
+        }
+
+        /* 設定アプリのスタイル */
+        .settings-sidebar {
+            width: 200px;
+            background: #f5f5f5;
+            border-right: 1px solid #e0e0e0;
+            float: left;
+            height: 100%;
+            overflow-y: auto;
+            padding: 0;
+        }
+
+        .settings-content {
+            margin-left: 200px;
+            padding: 20px;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .settings-category {
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+            display: flex;
+            align-items: center;
+        }
+
+        .settings-category:hover {
+            background: #e8e8e8;
+        }
+
+        .settings-category.active {
+            background: #e3f2fd;
+            border-left-color: #0078d4;
+        }
+
+        .settings-category-icon {
+            margin-right: 12px;
+            font-size: 16px;
+        }
+
+        .settings-section {
+            display: none;
+        }
+
+        .settings-section.active {
+            display: block;
+        }
+
+        .settings-group {
+            margin-bottom: 32px;
+        }
+
+        .settings-group h3 {
+            color: #0078d4;
+            margin-bottom: 16px;
+            font-size: 18px;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .setting-label {
+            flex: 1;
+        }
+
+        .setting-label h4 {
+            margin-bottom: 4px;
+        }
+
+        .setting-label p {
+            color: #666;
+            font-size: 13px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: #ccc;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: #0078d4;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: all 0.3s;
+        }
+
+        .toggle-switch.active::after {
+            left: 22px;
+        }
+
+        /* 通知エリア */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 16px;
+            border-radius: 8px;
+            backdrop-filter: blur(20px);
+            transform: translateX(100%);
+            transition: transform 0.3s;
+            z-index: 1001;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        /* BoxedWine埋め込み */
+        .boxedwine-container {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="desktop" id="desktop">
+        <!-- 選択ボックス -->
+        <div class="selection-box" id="selectionBox"></div>
+        
+        <!-- ドロップゾーン -->
+        <div class="drop-zone" id="dropZone">
+            <div>📁 ファイルをここにドロップしてください</div>
+        </div>
+
+        <!-- 設定ウィンドウ -->
+        <div class="window" id="settings" style="top: 50px; left: 50px; width: 900px; height: 600px;">
+            <div class="window-titlebar">
+                <span class="window-title">設定</span>
+                <div class="window-controls">
+                    <button class="window-control minimize" onclick="minimizeWindow('settings')">−</button>
+                    <button class="window-control maximize" onclick="toggleMaximize('settings')">□</button>
+                    <button class="window-control close" onclick="closeWindow('settings')">×</button>
+                </div>
+            </div>
+            <div class="window-content" style="padding: 0;">
+                <div class="settings-sidebar">
+                    <div class="settings-category active" data-category="system">
+                        <span class="settings-category-icon">💻</span>
+                        システム
+                    </div>
+                    <div class="settings-category" data-category="devices">
+                        <span class="settings-category-icon">🖱️</span>
+                        デバイス
+                    </div>
+                    <div class="settings-category" data-category="network">
+                        <span class="settings-category-icon">🌐</span>
+                        ネットワーク
+                    </div>
+                    <div class="settings-category" data-category="personalization">
+                        <span class="settings-category-icon">🎨</span>
+                        個人用設定
+                    </div>
+                    <div class="settings-category" data-category="apps">
+                        <span class="settings-category-icon">📱</span>
+                        アプリ
+                    </div>
+                    <div class="settings-category" data-category="accounts">
+                        <span class="settings-category-icon">👤</span>
+                        アカウント
+                    </div>
+                    <div class="settings-category" data-category="time">
+                        <span class="settings-category-icon">⏰</span>
+                        時刻と言語
+                    </div>
+                    <div class="settings-category" data-category="ease">
+                        <span class="settings-category-icon">♿</span>
+                        簡単操作
+                    </div>
+                    <div class="settings-category" data-category="privacy">
+                        <span class="settings-category-icon">🔒</span>
+                        プライバシー
+                    </div>
+                    <div class="settings-category" data-category="update">
+                        <span class="settings-category-icon">🔄</span>
+                        更新とセキュリティ
+                    </div>
+                </div>
+                <div class="settings-content">
+                    <!-- システム設定 -->
+                    <div class="settings-section active" id="system">
+                        <h2>システム</h2>
+                        <div class="settings-group">
+                            <h3>ディスプレイ</h3>
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <h4>夜間モード</h4>
+                                    <p>ブルーライトを軽減します</p>
+                                </div>
+                                <div class="toggle-switch" onclick="toggleSetting(this)"></div>
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <h4>自動的に明るさを調整する</h4>
+                                    <p>照明の変化に応じて明るさを調整</p>
+                                </div>
+                                <div class="toggle-switch active" onclick="toggleSetting(this)"></div>
+                            </div>
+                        </div>
+                        <div class="settings-group">
+                            <h3>電源とスリープ</h3>
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <h4>バッテリー駆動時の画面オフ</h4>
+                                    <p>15分後</p>
+                                </div>
+                                <select style="padding: 8px;">
+                                    <option>1分</option>
+                                    <option>5分</option>
+                                    <option selected>15分</option>
+                                    <option>30分</option>
+                                    <option>なし</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- デバイス設定 -->
+                    <div class="settings-section" id="devices">
+                        <h2>デバイス</h2>
+                        <div class="settings-group">
+                            <h3>マウス</h3>
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <h4>プライマリマウスボタン</h4>
+                                    <p>左</p>
+                                </div>
+                                <select style="padding: 8px;">
+                                    <option selected>左</option>
+                                    <option>右</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <h4>スクロール方向</h4>
+                                    <p>下にスクロールすると画面を下方向に移動</p>
+                                </div>
+                                <div class="toggle-switch active" onclick="toggleSetting(this)"></div>
+                            </div>
+                        </div>
+                        <div class="settings-group">
+                            <h3>キーボード</h3>
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <h4>キーリピート間隔</h4>
+                                    <p>長押し時の文字入力間隔</p>
+                                </div>
+                                <input type="range" min="1" max="10" value="5" style="width: 100px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- その他のセクション -->
+                    <div class="settings-section" id="network">
+                        <h2>ネットワークとインターネット</h2>
+                        <div class="settings-group">
+                            <h3>Wi-Fi</h3>
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <h4>Wi-Fi</h4>
+                                    <p>有効</p>
+                                </div>
+                                <div class="toggle-switch active" onclick="toggleSetting(this)"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section" id="personalization">
+                        <h2>個人用設定</h2>
+                        <div class="settings-group">
+                            <h3>背景</h3>
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <h4>背景の種類</h4>
+                                    <p>画像</p>
+                                </div>
+                                <select style="padding: 8px;">
+                                    <option selected>画像</option>
+                                    <option>単色</option>
+                                    <option>スライドショー</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section" id="apps">
+                        <h2>アプリ</h2>
+                        <div class="settings-group">
+                            <h3>インストール済みアプリ</h3>
+                            <p>アプリとプログラムの管理</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-section" id="accounts">
+                        <h2>アカウント</h2>
+                        <div class="settings-group">
+                            <h3>ユーザー情報</h3>
+                            <p>Microsoftアカウントでサインイン</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-section" id="time">
+                        <h2>時刻と言語</h2>
+                        <div class="settings-group">
+                            <h3>日付と時刻</h3>
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <h4>時刻を自動的に設定する</h4>
+                                </div>
+                                <div class="toggle-switch active" onclick="toggleSetting(this)"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section" id="ease">
+                        <h2>簡単操作</h2>
+                        <div class="settings-group">
+                            <h3>視覚</h3>
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <h4>ハイコントラスト</h4>
+                                </div>
+                                <div class="toggle-switch" onclick="toggleSetting(this)"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section" id="privacy">
+                        <h2>プライバシー</h2>
+                        <div class="settings-group">
+                            <h3>全般</h3>
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <h4>アプリが広告識別子を使用することを許可する</h4>
+                                </div>
+                                <div class="toggle-switch" onclick="toggleSetting(this)"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section" id="update">
+                        <h2>更新とセキュリティ</h2>
+                        <div class="settings-group">
+                            <h3>Windows Update</h3>
+                            <p>最新の状態です</p>
+                            <button style="padding: 12px 24px; background: #0078d4; color: white; border: none; border-radius: 4px; cursor: pointer;">更新プログラムのチェック</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- メモ帳ウィンドウ -->
+        <div class="window" id="notepad" style="top: 100px; left: 100px; width: 600px; height: 400px;">
+            <div class="window-titlebar">
+                <span class="window-title">メモ帳</span>
+                <div class="window-controls">
+                    <button class="window-control minimize" onclick="minimizeWindow('notepad')">−</button>
+                    <button class="window-control maximize" onclick="toggleMaximize('notepad')">□</button>
+                    <button class="window-control close" onclick="closeWindow('notepad')">×</button>
+                </div>
+            </div>
+            <div class="window-content">
+                <textarea style="width: 100%; height: 100%; border: none; outline: none; resize: none; font-family: 'Consolas', monospace;" placeholder="テキストを入力してください..."></textarea>
+            </div>
+        </div>
+
+        <!-- 電卓ウィンドウ -->
+        <div class="window" id="calculator" style="top: 150px; left: 200px; width: 320px; height: 500px;">
+            <div class="window-titlebar">
+                <span class="window-title">電卓</span>
+                <div class="window-controls">
+                    <button class="window-control minimize" onclick="minimizeWindow('calculator')">−</button>
+                    <button class="window-control maximize" onclick="toggleMaximize('calculator')">□</button>
+                    <button class="window-control close" onclick="closeWindow('calculator')">×</button>
+                </div>
+            </div>
+            <div class="window-content">
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; height: 100%;">
+                    <div style="grid-column: span 4; background: #f0f0f0; padding: 20px; font-size: 24px; text-align: right; margin-bottom: 16px;">0</div>
+                    <button style="padding: 16px; border: 1px solid #ccc; background: white; cursor: pointer;">7</button>
+                    <button style="padding: 16px; border: 1px solid #ccc; background: white; cursor: pointer;">8</button>
+                    <button style="padding: 16px; border: 1px solid #ccc; background: white; cursor: pointer;">9</button>
+                    <button style="padding: 16px; border: 1px solid #ccc; background: #e0e0e0; cursor: pointer;">÷</button>
+                    <button style="padding: 16px; border: 1px solid #ccc; background: white; cursor: pointer;">4</button>
+                    <button style="padding: 16px; border: 1px solid #ccc; background: white; cursor: pointer;">5</button>
+                    <button style="padding: 16px; border: 1px solid #ccc; background: white; cursor: pointer;">6</button>
+                    <button style="padding: 16px; border: 1px solid #ccc; background: #e0e0e0; cursor: pointer;">×</button>
+                    <button style="padding: 16px; border: 1px solid #ccc; background: white; cursor: pointer;">1</button>
+                    <button style="padding: 16px; border: 1px solid #ccc; background: white; cursor: pointer;">2
